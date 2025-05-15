@@ -121,9 +121,9 @@ a:hover {
     color: var(--bp-text-on-primary-accent);
 }
 .btn-primary:active, .btn-primary.active {
-    background-color: var(--bp-primary-active-color !important; /* Important to override Bootstrap */
-    border-color: var(--bp-primary-active-color !important;
-    color: var(--bp-text-on-primary-accent !important;
+    background-color: var(--bp-primary-active-color) !important; /* Important to override Bootstrap */
+    border-color: var(--bp-primary-active-color) !important;
+    color: var(--bp-text-on-primary-accent) !important;
 }
 .btn-primary:focus, .btn-primary.focus {
     background-color: var(--bp-primary-hover-color);
@@ -282,8 +282,9 @@ pre code {
     border: 1px solid var(--bp-border-color);
     border-radius: var(--bp-border-radius);
     padding: calc(var(--bp-spacing-unit) * 2);
-    white-space: pre-wrap;
-    word-wrap: break-word;
+    white-space: pre-wrap;      /* Preserves whitespace and wraps lines */
+    overflow-wrap: break-word;  /* Breaks long words/strings if they would overflow */
+    word-wrap: break-word;      /* Alias for overflow-wrap for older browser compatibility */
     max-height: 400px;
     overflow-y: auto;
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
@@ -314,22 +315,21 @@ pre code {
 }
 
 .language-list {
-    columns: 3;
+    columns: 3; /* Always attempt 3 columns */
+    -webkit-columns: 3;
+    -moz-columns: 3;
+    column-gap: calc(var(--bp-spacing-unit) * 3); /* 24px gap between columns */
     padding-left: 0;
     list-style-type: none;
     font-size: var(--bp-font-size-sm);
 }
 .language-list li {
     padding-bottom: calc(var(--bp-spacing-unit) * 0.5); /* 4px */
-    page-break-inside: avoid;
+    page-break-inside: avoid; /* Try to prevent items from breaking across columns */
     break-inside: avoid-column;
 }
-@media (max-width: 992px) {
-    .language-list { columns: 2; }
-}
-@media (max-width: 576px) {
-    .language-list { columns: 1; }
-}
+/* Removed media queries that changed column count for .language-list */
+/* The browser will adjust if width is insufficient for 3 columns. */
 
 /* Utility classes */
 .mb-spacing-1 { margin-bottom: var(--bp-spacing-unit); } /* 8px */
