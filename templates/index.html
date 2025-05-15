@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Whisper API Test Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 700px; margin: auto; }
+        h1 { color: #333; text-align: center; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input[type="file"], select, input[type="text"], input[type="number"], textarea {
+            display: block; margin-top: 5px; padding: 10px; border-radius: 4px;
+            border: 1px solid #ddd; width: calc(100% - 22px); box-sizing: border-box;
+        }
+        textarea { min-height: 60px; resize: vertical; }
+        input[type="checkbox"] { margin-top: 8px; margin-right: 5px; vertical-align: middle;}
+        .checkbox-label, .note-text { font-weight: normal; font-size: 0.9em; color: #555;}
+        input[type="submit"] {
+            margin-top: 25px; padding: 12px 20px; background-color: #5cb85c; color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%;
+        }
+        input[type="submit"]:hover { background-color: #4cae4c; }
+        #result_container { margin-top: 20px; }
+        #result_container h2 { margin-bottom: 5px;}
+        #result { padding: 10px; background-color: #e9e9e9; border: 1px solid #ccc; border-radius: 4px;
+                  white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto; }
+        .loader {
+            border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%;
+            width: 30px; height: 30px; animation: spin 1s linear infinite;
+            display: none; margin: 15px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: 1 / -1; }
+        .info-note { background-color: #e7f3fe; border-left: 4px solid #2196F3; padding: 10px; margin-top: 5px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Whisper API Test</h1>
+        <div style="text-align: right; margin-bottom: 15px;">
+            <a href="{{ url_for('docs') }}" target="_blank">View API Documentation</a>
+        </div>
+
+        <form id="transcribeForm" enctype="multipart/form-data">
+            <div class="full-width">
+                <label for="audio_file">Audio File:</label>
+                <input type="file" name="audio_file" id="audio_file" accept="audio/*" required>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label for="model_name">Model Name:</label>
+                    <select name="model_name" id="model_name">
+                        <option value="tiny">tiny</option>
+                        <option value="tiny.en">tiny.en</option>
+                        <option value="base" selected>base</option>
+                        <option value="base.en">base.en</option>
+                        <option value="small">small</option>
+                        <option value="small.en">small.en</option>
+                        <option value="medium">medium</option>
+                        <option value="medium.en">medium.en</option>
+                        <option value="large-v1">large-v1</option>
+                        <option value="large-v2">large-v2</option>
+                        <option value="large-v3">large-v3</option>
+                        <option value="large">large</option>
+                        <option value="turbo" id="turbo_option" disabled>turbo (GPU Recommended)</option>
+                    </select>
+                    <div class="info-note">
+                        Models are downloaded on first use and may take time.
+                        <br>
+                        <input type="checkbox" id="enable_turbo_checkbox" name="enable_turbo">
+                        <label for="enable_turbo_checkbox" class="checkbox-label">Enable 'turbo' model option</label>
+                        {% if not gpu_available %}
+                        <span class="note-text" style="color:orange;"> (GPU not detected by server, 'turbo' may be very slow or fail if it's GPU-specific)</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <label for="task">Task:</label>
+                    <select name="task" id="task">
+                        <option value="transcribe" selected>Transcribe</option>
+                        <option value="translate">Translate (to English)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label for="language">Language (ISO code):</label>
+                    <input type="text" name="language" id="language" placeholder="e.g., en, es (blank for auto)">
+                </div>
+                <div>
+                    <label for="output_format">Preferred Output Format:</label>
+                    <select name="output_format" id="output_format">
+                        <option value="json" selected>JSON (Full details)</option>
+                        <option value="txt">Text (Plain text)</option>
+                        <option value="srt">SRT (Subtitles)</option>
+                        <option value="vtt">VTT (Web Video Text Tracks)</option>
+                        <option value="tsv">TSV (Tab Separated Values)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="full-width">
+                 <input type="checkbox" name="simplified_output" id="simplified_output_checkbox" value="true">
+                 <label for="simplified_output_checkbox" class="checkbox-label">Return simplified output structure (see docs for details)</label>
+            </div>
+
+
+            <div class="full-width">
+                <label for="initial_prompt">Initial Prompt:</label>
+                <textarea name="initial_prompt" id="initial_prompt" placeholder="Optional: Context to guide transcription."></textarea>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label for="temperature">Temperature:</label>
+                    <input type="number" name="temperature" id="temperature" value="0.0" step="0.1" min="0" max="1.0">
+                </div>
+                <div>
+                    <label for="best_of">Best Of:</label>
+                    <input type="number" name="best_of" id="best_of" value="5" step="1" min="1">
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <input type="checkbox" name="word_timestamps" id="word_timestamps_true" value="true">
+                    <label for="word_timestamps_true" class="checkbox-label">Enable Word Timestamps</label>
+                </div>
+                <div>
+                    <label for="verbose_output">Verbose (server console):</label>
+                    <select name="verbose_output" id="verbose_output">
+                        <option value="default" selected>Whisper Default</option>
+                        <option value="false">False (Suppress)</option>
+                        <option value="true">True (Force)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="full-width">
+                <input type="submit" value="Transcribe Audio">
+            </div>
+        </form>
+
+        <div class="loader" id="loader"></div>
+        <div id="result_container">
+            <h2>API Response:</h2>
+            <pre id="result">Awaiting transcription...</pre>
+        </div>
+    </div>
+
+    <script>
+        const turboOption = document.getElementById('turbo_option');
+        const enableTurboCheckbox = document.getElementById('enable_turbo_checkbox');
+        const modelSelect = document.getElementById('model_name');
+
+        enableTurboCheckbox.addEventListener('change', function() {
+            turboOption.disabled = !this.checked;
+            if (!this.checked && modelSelect.value === 'turbo') {
+                modelSelect.value = 'base'; // Revert to default if turbo is disabled and was selected
+            }
+        });
+
+        document.getElementById('transcribeForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            // Ensure checkboxes send 'true'/'false' or are handled by server checking presence
+            if (!formData.has('word_timestamps')) formData.set('word_timestamps', 'false');
+            if (!formData.has('simplified_output')) formData.set('simplified_output', 'false');
+            // 'enable_turbo' is for UI control, its value isn't directly used by whisper_wrapper's transcribe_audio
+            // but backend could use it for validation if desired.
+
+            const resultDiv = document.getElementById('result');
+            const loaderDiv = document.getElementById('loader');
+            resultDiv.textContent = 'Transcribing... Please wait. This can take a while for large files or models.';
+            loaderDiv.style.display = 'block';
+
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                loaderDiv.style.display = 'none';
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.textContent = 'Error: ' + (data.error || response.statusText || "Unknown error");
+                }
+            } catch (error) {
+                loaderDiv.style.display = 'none';
+                resultDiv.textContent = 'Network error or server issue: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

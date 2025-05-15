@@ -1,0 +1,6 @@
+Flask
+openai-whisper
+torch
+numpy
+ffmpeg-python
+tiktoken
