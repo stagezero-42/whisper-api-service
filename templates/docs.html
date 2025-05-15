@@ -2,276 +2,191 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Whisper API Documentation</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; color: #333; }
-        .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
-        .header h1 { margin: 0; }
-        .container { max-width: 900px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
-        .content-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-        .content-section:last-child { border-bottom: none; }
-        h2 { color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; margin-top: 0; }
-        h3 { color: #555; margin-top: 20px; }
-        p, ul, li { line-height: 1.6; color: #555; }
-        ul { padding-left: 20px; list-style-type: none;}
-        code { background-color: #eef; padding: 2px 5px; border-radius: 3px; font-family: "Courier New", Courier, monospace; }
-        .field-name { font-weight: bold; color: #4CAF50; }
-        .default-value { font-style: italic; color: #777; }
-        .note { background-color: #fff3cd; border-left: 4px solid #ffeeba; padding: 10px; margin-top: 10px; }
-        .back-link { display: block; margin-bottom: 20px; text-align: right; }
-        .back-link a { text-decoration: none; color: #4CAF50; font-weight: bold; }
-        .language-list {
-            columns: 3; /* Adjust column count based on preference */
-            -webkit-columns: 3;
-            -moz-columns: 3;
-            padding-left: 0;
-            list-style-type: none;
-        }
-        .language-list li {
-            padding-bottom: 5px;
-            page-break-inside: avoid; /* Try to avoid breaking list items across columns */
-            break-inside: avoid-column;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whisper API Documentation - Blueprint Design</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="header">
-        <h1>Whisper API - Field Documentation</h1>
-    </div>
-    <div class="container">
-        <div class="back-link">
-            <a href="{{ url_for('index') }}">&laquo; Back to Transcription Page</a>
-        </div>
+    <div class="container mt-spacing-3">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-9">
+                <div class="bp-card mb-spacing-3">
+                    <div class="docs-header">
+                        <h1 class="h2">Whisper API - Field Documentation</h1>
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">&laquo; Back to Transcription Page</a>
+                    </div>
+                </div>
 
-        <p>This page provides detailed explanations for each field available on the Whisper API transcription interface. Understanding these options will help you get the best possible results from the service.</p>
+                <div class="bp-card">
+                    <p>This page provides detailed explanations for each field available on the Whisper API transcription interface. Understanding these options will help you get the best possible results from the service.</p>
 
-        <div class="content-section">
-            <h2><span class="field-name">Audio File</span></h2>
-            <p>The audio file you want to transcribe or translate.</p>
-            <ul>
-                <li><strong>Accepted Formats:</strong> Common audio formats like <code>WAV</code>, <code>MP3</code>, <code>M4A</code>, <code>OGG</code>, <code>FLAC</code>, <code>AAC</code>, <code>Opus</code>. The underlying Whisper library uses FFmpeg to process audio, so most FFmpeg-supported formats should work.</li>
-                <li><strong>Max File Size:</strong> Currently configured to 300 MB. Larger files may be rejected.</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Audio File</span></h2>
+                        <p>The audio file you want to transcribe or translate.</p>
+                        <ul class="list-unstyled">
+                            <li><strong>Accepted Formats:</strong> Common audio formats like <code>WAV</code>, <code>MP3</code>, <code>M4A</code>, <code>OGG</code>, <code>FLAC</code>, <code>AAC</code>, <code>Opus</code>. The underlying Whisper library uses FFmpeg to process audio, so most FFmpeg-supported formats should work.</li>
+                            <li><strong>Max File Size:</strong> Currently configured to 300 MB. Larger files may be rejected.</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Model Name</span></h2>
-            <p>Specifies the Whisper model to use for transcription. Different models offer trade-offs between speed, accuracy, and resource usage.</p>
-            <ul>
-                <li><strong>Standard Models:</strong>
-                    <ul>
-                        <li><code>tiny</code>, <code>tiny.en</code></li>
-                        <li><code>base</code>, <code>base.en</code></li>
-                        <li><code>small</code>, <code>small.en</code></li>
-                        <li><code>medium</code>, <code>medium.en</code></li>
-                        <li><code>large</code>, <code>large-v1</code>, <code>large-v2</code>, <code>large-v3</code> (<code>large</code> typically points to the latest large version like v2 or v3)</li>
-                        <li>Larger models (e.g., <code>large</code>) are more accurate but slower and require more memory/VRAM. Smaller models (e.g., <code>tiny</code>) are faster but less accurate.</li>
-                        <li><code>.en</code> suffixed models are optimized for English-only audio and are generally faster and more accurate for English than their multilingual counterparts.</li>
-                    </ul>
-                </li>
-                <li><strong>Default:</strong> <code>base</code></li>
-                <li><strong>Custom Models:</strong> The "turbo" option (if enabled via checkbox) is an example. The system will attempt to load any model name provided if it corresponds to a valid model file accessible by the backend.</li>
-            </ul>
-            <div class="note"><p>Models are downloaded on first use per model type and this can take some time depending on model size and internet speed.</p></div>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Model Name</span></h2>
+                        <p>Specifies the Whisper model to use for transcription. Different models offer trade-offs between speed, accuracy, and resource usage.</p>
+                        <ul class="list-unstyled">
+                            <li><strong>Standard Models:</strong>
+                                <ul class="list-unstyled ps-3">
+                                    <li><code>tiny</code>, <code>tiny.en</code></li>
+                                    <li><code>base</code>, <code>base.en</code></li>
+                                    <li><code>small</code>, <code>small.en</code></li>
+                                    <li><code>medium</code>, <code>medium.en</code></li>
+                                    <li><code>large</code>, <code>large-v1</code>, <code>large-v2</code>, <code>large-v3</code> (<code>large</code> typically points to the latest large version)</li>
+                                    <li>Larger models (e.g., <code>large</code>) are more accurate but slower and require more memory/VRAM. Smaller models (e.g., <code>tiny</code>) are faster but less accurate.</li>
+                                    <li><code>.en</code> suffixed models are optimized for English-only audio and are generally faster and more accurate for English than their multilingual counterparts.</li>
+                                </ul>
+                            </li>
+                            <li class="mt-2"><strong>Default:</strong> <code>base</code></li>
+                            <li><strong>Custom Models:</strong> The "turbo" option (if enabled via checkbox) is an example. The system will attempt to load any model name provided if it corresponds to a valid model file accessible by the backend.</li>
+                        </ul>
+                        <div class="bp-info-note"><p>Models are downloaded on first use per model type and this can take some time depending on model size and internet speed.</p></div>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Task</span></h2>
-            <p>Determines the operation to perform on the audio.</p>
-            <ul>
-                <li><strong><code>transcribe</code>:</strong> Converts speech in the audio to text in its original language. <span class="default-value">(Default)</span></li>
-                <li><strong><code>translate</code>:</strong> Translates speech from any supported language directly into English text.</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Task</span></h2>
+                        <p>Determines the operation to perform on the audio.</p>
+                        <ul class="list-unstyled">
+                            <li><strong><code>transcribe</code>:</strong> Converts speech in the audio to text in its original language. <span class="default-value">(Default)</span></li>
+                            <li><strong><code>translate</code>:</strong> Translates speech from any supported language directly into English text.</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Language</span></h2>
-            <p>Specify the language spoken in the audio by its ISO 639-1 code. Providing the correct language code can improve accuracy and speed. If left blank or set to <code>None</code>, Whisper will attempt to auto-detect the language (default behavior).</p>
-            <p><strong>Supported Language Codes (and English names):</strong></p>
-            <ul class="language-list">
-                <li><code>af</code> (Afrikaans)</li>
-                <li><code>am</code> (Amharic)</li>
-                <li><code>ar</code> (Arabic)</li>
-                <li><code>as</code> (Assamese)</li>
-                <li><code>az</code> (Azerbaijani)</li>
-                <li><code>ba</code> (Bashkir)</li>
-                <li><code>be</code> (Belarusian)</li>
-                <li><code>bg</code> (Bulgarian)</li>
-                <li><code>bn</code> (Bengali)</li>
-                <li><code>bo</code> (Tibetan)</li>
-                <li><code>br</code> (Breton)</li>
-                <li><code>bs</code> (Bosnian)</li>
-                <li><code>ca</code> (Catalan)</li>
-                <li><code>cs</code> (Czech)</li>
-                <li><code>cy</code> (Welsh)</li>
-                <li><code>da</code> (Danish)</li>
-                <li><code>de</code> (German)</li>
-                <li><code>el</code> (Greek)</li>
-                <li><code>en</code> (English)</li>
-                <li><code>es</code> (Spanish)</li>
-                <li><code>et</code> (Estonian)</li>
-                <li><code>eu</code> (Basque)</li>
-                <li><code>fa</code> (Persian)</li>
-                <li><code>fi</code> (Finnish)</li>
-                <li><code>fo</code> (Faroese)</li>
-                <li><code>fr</code> (French)</li>
-                <li><code>gl</code> (Galician)</li>
-                <li><code>gu</code> (Gujarati)</li>
-                <li><code>ha</code> (Hausa)</li>
-                <li><code>haw</code> (Hawaiian)</li>
-                <li><code>he</code> (Hebrew)</li>
-                <li><code>hi</code> (Hindi)</li>
-                <li><code>hr</code> (Croatian)</li>
-                <li><code>ht</code> (Haitian Creole)</li>
-                <li><code>hu</code> (Hungarian)</li>
-                <li><code>hy</code> (Armenian)</li>
-                <li><code>id</code> (Indonesian)</li>
-                <li><code>is</code> (Icelandic)</li>
-                <li><code>it</code> (Italian)</li>
-                <li><code>ja</code> (Japanese)</li>
-                <li><code>jw</code> (Javanese)</li>
-                <li><code>ka</code> (Georgian)</li>
-                <li><code>kk</code> (Kazakh)</li>
-                <li><code>km</code> (Khmer)</li>
-                <li><code>kn</code> (Kannada)</li>
-                <li><code>ko</code> (Korean)</li>
-                <li><code>la</code> (Latin)</li>
-                <li><code>lb</code> (Luxembourgish)</li>
-                <li><code>ln</code> (Lingala)</li>
-                <li><code>lo</code> (Lao)</li>
-                <li><code>lt</code> (Lithuanian)</li>
-                <li><code>lv</code> (Latvian)</li>
-                <li><code>mg</code> (Malagasy)</li>
-                <li><code>mi</code> (Maori)</li>
-                <li><code>mk</code> (Macedonian)</li>
-                <li><code>ml</code> (Malayalam)</li>
-                <li><code>mn</code> (Mongolian)</li>
-                <li><code>mr</code> (Marathi)</li>
-                <li><code>ms</code> (Malay)</li>
-                <li><code>mt</code> (Maltese)</li>
-                <li><code>my</code> (Myanmar)</li>
-                <li><code>ne</code> (Nepali)</li>
-                <li><code>nl</code> (Dutch)</li>
-                <li><code>nn</code> (Nynorsk)</li>
-                <li><code>no</code> (Norwegian)</li>
-                <li><code>oc</code> (Occitan)</li>
-                <li><code>pa</code> (Punjabi)</li>
-                <li><code>pl</code> (Polish)</li>
-                <li><code>ps</code> (Pashto)</li>
-                <li><code>pt</code> (Portuguese)</li>
-                <li><code>ro</code> (Romanian)</li>
-                <li><code>ru</code> (Russian)</li>
-                <li><code>sa</code> (Sanskrit)</li>
-                <li><code>sd</code> (Sindhi)</li>
-                <li><code>si</code> (Sinhala)</li>
-                <li><code>sk</code> (Slovak)</li>
-                <li><code>sl</code> (Slovenian)</li>
-                <li><code>sn</code> (Shona)</li>
-                <li><code>so</code> (Somali)</li>
-                <li><code>sq</code> (Albanian)</li>
-                <li><code>sr</code> (Serbian)</li>
-                <li><code>su</code> (Sundanese)</li>
-                <li><code>sv</code> (Swedish)</li>
-                <li><code>sw</code> (Swahili)</li>
-                <li><code>ta</code> (Tamil)</li>
-                <li><code>te</code> (Telugu)</li>
-                <li><code>tg</code> (Tajik)</li>
-                <li><code>th</code> (Thai)</li>
-                <li><code>tk</code> (Turkmen)</li>
-                <li><code>tl</code> (Tagalog)</li>
-                <li><code>tr</code> (Turkish)</li>
-                <li><code>tt</code> (Tatar)</li>
-                <li><code>uk</code> (Ukrainian)</li>
-                <li><code>ur</code> (Urdu)</li>
-                <li><code>uz</code> (Uzbek)</li>
-                <li><code>vi</code> (Vietnamese)</li>
-                <li><code>yi</code> (Yiddish)</li>
-                <li><code>yo</code> (Yoruba)</li>
-                <li><code>yue</code> (Cantonese)</li>
-                <li><code>zh</code> (Chinese)</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Language</span></h2>
+                        <p>Specify the language spoken in the audio by its ISO 639-1 code. Providing the correct language code can improve accuracy and speed. If left blank or set to <code>None</code>, Whisper will attempt to auto-detect the language (default behavior).</p>
+                        <p class="mb-2"><strong>Supported Language Codes (and English names):</strong></p>
+                        <ul class="language-list">
+                            <li><code>af</code> (Afrikaans)</li><li><code>am</code> (Amharic)</li><li><code>ar</code> (Arabic)</li>
+                            <li><code>as</code> (Assamese)</li><li><code>az</code> (Azerbaijani)</li><li><code>ba</code> (Bashkir)</li>
+                            <li><code>be</code> (Belarusian)</li><li><code>bg</code> (Bulgarian)</li><li><code>bn</code> (Bengali)</li>
+                            <li><code>bo</code> (Tibetan)</li><li><code>br</code> (Breton)</li><li><code>bs</code> (Bosnian)</li>
+                            <li><code>ca</code> (Catalan)</li><li><code>cs</code> (Czech)</li><li><code>cy</code> (Welsh)</li>
+                            <li><code>da</code> (Danish)</li><li><code>de</code> (German)</li><li><code>el</code> (Greek)</li>
+                            <li><code>en</code> (English)</li><li><code>es</code> (Spanish)</li><li><code>et</code> (Estonian)</li>
+                            <li><code>eu</code> (Basque)</li><li><code>fa</code> (Persian)</li><li><code>fi</code> (Finnish)</li>
+                            <li><code>fo</code> (Faroese)</li><li><code>fr</code> (French)</li><li><code>gl</code> (Galician)</li>
+                            <li><code>gu</code> (Gujarati)</li><li><code>ha</code> (Hausa)</li><li><code>haw</code> (Hawaiian)</li>
+                            <li><code>he</code> (Hebrew)</li><li><code>hi</code> (Hindi)</li><li><code>hr</code> (Croatian)</li>
+                            <li><code>ht</code> (Haitian Creole)</li><li><code>hu</code> (Hungarian)</li><li><code>hy</code> (Armenian)</li>
+                            <li><code>id</code> (Indonesian)</li><li><code>is</code> (Icelandic)</li><li><code>it</code> (Italian)</li>
+                            <li><code>ja</code> (Japanese)</li><li><code>jw</code> (Javanese)</li><li><code>ka</code> (Georgian)</li>
+                            <li><code>kk</code> (Kazakh)</li><li><code>km</code> (Khmer)</li><li><code>kn</code> (Kannada)</li>
+                            <li><code>ko</code> (Korean)</li><li><code>la</code> (Latin)</li><li><code>lb</code> (Luxembourgish)</li>
+                            <li><code>ln</code> (Lingala)</li><li><code>lo</code> (Lao)</li><li><code>lt</code> (Lithuanian)</li>
+                            <li><code>lv</code> (Latvian)</li><li><code>mg</code> (Malagasy)</li><li><code>mi</code> (Maori)</li>
+                            <li><code>mk</code> (Macedonian)</li><li><code>ml</code> (Malayalam)</li><li><code>mn</code> (Mongolian)</li>
+                            <li><code>mr</code> (Marathi)</li><li><code>ms</code> (Malay)</li><li><code>mt</code> (Maltese)</li>
+                            <li><code>my</code> (Myanmar)</li><li><code>ne</code> (Nepali)</li><li><code>nl</code> (Dutch)</li>
+                            <li><code>nn</code> (Nynorsk)</li><li><code>no</code> (Norwegian)</li><li><code>oc</code> (Occitan)</li>
+                            <li><code>pa</code> (Punjabi)</li><li><code>pl</code> (Polish)</li><li><code>ps</code> (Pashto)</li>
+                            <li><code>pt</code> (Portuguese)</li><li><code>ro</code> (Romanian)</li><li><code>ru</code> (Russian)</li>
+                            <li><code>sa</code> (Sanskrit)</li><li><code>sd</code> (Sindhi)</li><li><code>si</code> (Sinhala)</li>
+                            <li><code>sk</code> (Slovak)</li><li><code>sl</code> (Slovenian)</li><li><code>sn</code> (Shona)</li>
+                            <li><code>so</code> (Somali)</li><li><code>sq</code> (Albanian)</li><li><code>sr</code> (Serbian)</li>
+                            <li><code>su</code> (Sundanese)</li><li><code>sv</code> (Swedish)</li><li><code>sw</code> (Swahili)</li>
+                            <li><code>ta</code> (Tamil)</li><li><code>te</code> (Telugu)</li><li><code>tg</code> (Tajik)</li>
+                            <li><code>th</code> (Thai)</li><li><code>tk</code> (Turkmen)</li><li><code>tl</code> (Tagalog)</li>
+                            <li><code>tr</code> (Turkish)</li><li><code>tt</code> (Tatar)</li><li><code>uk</code> (Ukrainian)</li>
+                            <li><code>ur</code> (Urdu)</li><li><code>uz</code> (Uzbek)</li><li><code>vi</code> (Vietnamese)</li>
+                            <li><code>yi</code> (Yiddish)</li><li><code>yo</code> (Yoruba)</li><li><code>yue</code> (Cantonese)</li>
+                            <li><code>zh</code> (Chinese)</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Preferred Output Format</span></h2>
-            <p>Determines the structure or format of the transcription result. If "Return simplified output structure" is checked, the response will only contain the <code>formatted_output</code> field with the chosen format. Otherwise, it includes full <code>transcription_details</code> along with the <code>formatted_output</code> string (for TXT, SRT, VTT, TSV).</p>
-            <ul>
-                <li><strong><code>JSON (Full details)</code>:</strong> <span class="default-value">(Default if not simplified)</span> Provides the complete, raw JSON output from Whisper under <code>transcription_details</code>. If simplified, <code>formatted_output</code> will contain just the transcribed text.</li>
-                <li><strong><code>Text (Plain text)</code>:</strong> <code>formatted_output</code> contains the transcribed text as a single string.</li>
-                <li><strong><code>SRT (Subtitles)</code>:</strong>
-                    <ul>
-                        <li>If simplified: <code>formatted_output</code> is a JSON object like: <br><code>{"1": ["HH:MM:SS,mmm --> HH:MM:SS,mmm", "Segment text"], ...}</code></li>
-                        <li>If not simplified: <code>formatted_output</code> is a string in standard SRT format.</li>
-                    </ul>
-                </li>
-                <li><strong><code>VTT (Web Video Text Tracks)</code>:</strong>
-                     <ul>
-                        <li>If simplified: <code>formatted_output</code> is a JSON object like: <br><code>{"1": ["HH:MM:SS.mmm --> HH:MM:SS.mmm", "Segment text"], ...}</code> (Note: VTT usually doesn't have segment numbers, but shown here for consistency with SRT example).</li>
-                        <li>If not simplified: <code>formatted_output</code> is a string in standard VTT format, starting with "WEBVTT".</li>
-                    </ul>
-                </li>
-                <li><strong><code>TSV (Tab Separated Values)</code>:</strong> <code>formatted_output</code> contains a TSV string (start_ms, end_ms, text).</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Preferred Output Format</span></h2>
+                        <p>Determines the structure or format of the transcription result. If "Return simplified output structure" is checked, the response will only contain the <code>formatted_output</code> field with the chosen format. Otherwise, it includes full <code>transcription_details</code> along with the <code>formatted_output</code> string (for TXT, SRT, VTT, TSV).</p>
+                         <ul class="list-unstyled">
+                            <li><strong><code>JSON (Full details)</code>:</strong> <span class="default-value">(Default if not simplified)</span> Provides the complete, raw JSON output from Whisper under <code>transcription_details</code>. If simplified, <code>formatted_output</code> will contain just the transcribed text.</li>
+                            <li><strong><code>Text (Plain text)</code>:</strong> <code>formatted_output</code> contains the transcribed text as a single string.</li>
+                            <li><strong><code>SRT (Subtitles)</code>:</strong>
+                                <ul class="list-unstyled ps-3">
+                                    <li>If simplified: <code>formatted_output</code> is a JSON object like: <br><code>{"1": ["HH:MM:SS,mmm --> HH:MM:SS,mmm", "Segment text"], ...}</code></li>
+                                    <li>If not simplified: <code>formatted_output</code> is a string in standard SRT format.</li>
+                                </ul>
+                            </li>
+                            <li class="mt-2"><strong><code>VTT (Web Video Text Tracks)</code>:</strong>
+                                 <ul class="list-unstyled ps-3">
+                                    <li>If simplified: <code>formatted_output</code> is a JSON object like: <br><code>{"1": ["HH:MM:SS.mmm --> HH:MM:SS.mmm", "Segment text"], ...}</code></li>
+                                    <li>If not simplified: <code>formatted_output</code> is a string in standard VTT format, starting with "WEBVTT".</li>
+                                </ul>
+                            </li>
+                             <li class="mt-2"><strong><code>TSV (Tab Separated Values)</code>:</strong> <code>formatted_output</code> contains a TSV string (start_ms, end_ms, text).</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Return simplified output structure</span> (Checkbox)</h2>
-            <p>If checked, the API response will be simplified:</p>
-            <ul>
-                <li>For <strong>Text (Plain Text)</strong>, <strong>TSV</strong>, or <strong>JSON (Full details)</strong> preferences: The API will return <code>{"formatted_output": "your_transcribed_text_or_tsv_string"}</code>.</li>
-                <li>For <strong>SRT (Subtitles)</strong> or <strong>VTT (Web Video Text Tracks)</strong> preferences: The API will return a structured JSON object under <code>formatted_output</code>, as described in the "Preferred Output Format" section above for simplified SRT/VTT.</li>
-                <li>If unchecked <span class="default-value">(Default)</span>: The API returns a richer JSON object containing <code>{"transcription_details": {...full_whisper_object...}, "formatted_output": "string_representation_if_applicable"}</code>.</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Return simplified output structure</span> <span class="default-value">(Checkbox)</span></h2>
+                        <p>If checked, the API response will be simplified:</p>
+                        <ul class="list-unstyled">
+                            <li>For <strong>Text (Plain Text)</strong>, <strong>TSV</strong>, or <strong>JSON (Full details)</strong> preferences: The API will return <code>{"formatted_output": "your_transcribed_text_or_tsv_string"}</code>.</li>
+                            <li>For <strong>SRT (Subtitles)</strong> or <strong>VTT (Web Video Text Tracks)</strong> preferences: The API will return a structured JSON object under <code>formatted_output</code>.</li>
+                            <li>If unchecked <span class="default-value">(Default)</span>: The API returns a richer JSON object.</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Initial Prompt</span></h2>
-            <p>Provide a text prompt to guide the model's transcription style, vocabulary, or to correct common misrecognitions.</p>
-            <ul>
-                <li><strong>Purpose:</strong> Can help improve accuracy for specific jargon, names, acronyms, or enforce a certain output style.</li>
-                <li><strong>Example:</strong> "The patient reported symptoms of dyspnea. Dr. Evelyn Reed was the attending physician."</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Initial Prompt</span></h2>
+                        <p>Provide a text prompt to guide the model's transcription style, vocabulary, or to correct common misrecognitions.</p>
+                        <ul class="list-unstyled">
+                            <li><strong>Purpose:</strong> Can help improve accuracy for specific jargon, names, acronyms, or enforce a certain output style.</li>
+                            <li><strong>Example:</strong> "The patient reported symptoms of dyspnea. Dr. Evelyn Reed was the attending physician."</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Temperature</span></h2>
-            <p>Controls the randomness of the output. Range: 0.0 to 1.0.</p>
-            <ul>
-                <li><strong><code>0.0</code>:</strong> <span class="default-value">(Default)</span> Most likely (deterministic) output using greedy decoding.</li>
-                <li><strong><code>>0.0</code>:</strong> Introduces randomness. Higher values can make output more diverse but potentially less accurate.</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Temperature</span></h2>
+                        <p>Controls the randomness of the output. Range: 0.0 to 1.0.</p>
+                        <ul class="list-unstyled">
+                            <li><strong><code>0.0</code>:</strong> <span class="default-value">(Default)</span> Most likely (deterministic) output using greedy decoding.</li>
+                            <li><strong><code>>0.0</code>:</strong> Introduces randomness. Higher values can make output more diverse but potentially less accurate.</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Best Of</span></h2>
-            <p>Number of candidate sequences to generate when sampling with temperature (if temperature > 0). The model picks the best one. If temperature is 0, this influences beam search (typically `beam_size` would be related or equal to `best_of`).</p>
-            <ul>
-                <li><strong>Default:</strong> <code>5</code>.</li>
-                <li><strong>Effect:</strong> Higher values can improve results but increase computation time.</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Best Of</span></h2>
+                        <p>Number of candidate sequences to generate when sampling with temperature (if temperature > 0). The model picks the best one. If temperature is 0, this influences beam search.</p>
+                        <ul class="list-unstyled">
+                            <li><strong>Default:</strong> <code>5</code>.</li>
+                            <li><strong>Effect:</strong> Higher values can improve results but increase computation time.</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Enable Word Timestamps</span> (Checkbox)</h2>
-            <p>If checked, the model will attempt to provide start and end timestamps for individual words. This will be reflected in the <code>transcription_details.segments[n].words</code> part of the full JSON response (i.e., when "simplified output" is not checked).</p>
-            <ul>
-                <li><strong>Default:</strong> Unchecked (False).</li>
-                <li><strong>Consideration:</strong> Increases processing time and memory. Word timestamp accuracy can vary.</li>
-            </ul>
-        </div>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Enable Word Timestamps</span> <span class="default-value">(Checkbox)</span></h2>
+                        <p>If checked, the model will attempt to provide start and end timestamps for individual words. This will be reflected in the <code>transcription_details.segments[n].words</code> part of the full JSON response (i.e., when "simplified output" is not checked).</p>
+                        <ul class="list-unstyled">
+                            <li><strong>Default:</strong> Unchecked (False).</li>
+                            <li><strong>Consideration:</strong> Increases processing time and memory. Word timestamp accuracy can vary.</li>
+                        </ul>
+                    </div>
 
-        <div class="content-section">
-            <h2><span class="field-name">Verbose (server console)</span></h2>
-            <p>Controls Whisper's logging output in the server's console (not in the API response).</p>
-            <ul>
-                <li><strong><code>Whisper Default</code>:</strong> <span class="default-value">(Default)</span> Usually shows progress bars.</li>
-                <li><strong><code>False (Suppress)</code>:</strong> Reduces console output.</li>
-                <li><strong><code>True (Force)</code>:</strong> May show more detailed logs.</li>
-            </ul>
-        </div>
-        <div class="back-link" style="text-align: center; margin-top: 30px;">
-            <a href="{{ url_for('index') }}">&laquo; Back to Transcription Page</a>
+                    <div class="content-section">
+                        <h2 class="h4"><span class="field-name">Verbose (server console)</span></h2>
+                        <p>Controls Whisper's logging output in the server's console (not in the API response).</p>
+                        <ul class="list-unstyled">
+                            <li><strong><code>Whisper Default</code>:</strong> <span class="default-value">(Default)</span> Usually shows progress bars.</li>
+                            <li><strong><code>False (Suppress)</code>:</strong> Reduces console output.</li>
+                            <li><strong><code>True (Force)</code>:</strong> May show more detailed logs.</li>
+                        </ul>
+                    </div>
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">&laquo; Back to Transcription Page</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

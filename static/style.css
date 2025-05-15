@@ -1,4 +1,338 @@
-/* You can add custom CSS styles here if needed */
-body {
-    font-family: Arial, sans-serif;
+/* static/style.css */
+
+/* --- Theme Variables --- */
+:root {
+    /* Blueprint Color Palette */
+    --bp-primary-color: #0052CC; /* Navy Blue */
+    --bp-primary-hover-color: #0041A3;
+    --bp-primary-active-color: #00307A;
+
+    --bp-secondary-color: #DFE1E6; /* Light Gray for secondary buttons, borders */
+    --bp-secondary-hover-color: #C1C7D0;
+    --bp-secondary-text-color: #42526E; /* Text for secondary buttons */
+
+    --bp-accent-orange: #FF5630;
+    --bp-accent-green: #36B37E;
+    --bp-accent-red: #DE350B; /* For errors */
+
+    --bp-background-color: #F4F5F7; /* Page background */
+    --bp-card-background-color: #FFFFFF; /* Card background */
+
+    --bp-text-primary-color: #172B4D; /* Near black for high contrast body text */
+    --bp-text-secondary-color: #6B778C; /* Medium Gray for less important text */
+    --bp-text-on-primary-accent: #FFFFFF;
+
+    --bp-border-color: #DFE1E6;
+    --bp-input-border-focus-color: var(--bp-primary-color);
+    --bp-focus-ring-color: rgba(0, 82, 204, 0.25);
+
+    /* Typography */
+    --bp-font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --bp-font-size-base: 1rem; /* 16px */
+    --bp-font-size-sm: 0.875rem; /* 14px */
+    --bp-font-size-lg: 1.25rem; /* 20px */
+
+    --bp-line-height-base: 1.5;
+    --bp-font-weight-normal: 400;
+    --bp-font-weight-semibold: 600;
+
+    /* Spacing & Sizing */
+    --bp-border-radius: 4px;
+    --bp-border-radius-lg: 8px;
+    --bp-spacing-unit: 8px; /* Base for 8px grid */
+
+    /* Transitions */
+    --bp-transition-base: all 0.2s ease-in-out;
 }
+
+/* --- Global Styles & Bootstrap Overrides --- */
+body {
+    font-family: var(--bp-font-family);
+    font-size: var(--bp-font-size-base);
+    font-weight: var(--bp-font-weight-normal);
+    line-height: var(--bp-line-height-base);
+    color: var(--bp-text-primary-color);
+    background-color: var(--bp-background-color);
+    padding-top: calc(var(--bp-spacing-unit) * 3); /* 24px */
+    padding-bottom: calc(var(--bp-spacing-unit) * 3);
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    font-weight: var(--bp-font-weight-semibold);
+    color: var(--bp-text-primary-color);
+    margin-top: 0;
+    margin-bottom: calc(var(--bp-spacing-unit) * 2); /* 16px */
+}
+
+h1, .h1 { font-size: 2rem; } /* 32px */
+h2, .h2 { font-size: 1.5rem; } /* 24px */
+h3, .h3 { font-size: 1.25rem; } /* 20px */
+
+p {
+    margin-top: 0;
+    margin-bottom: calc(var(--bp-spacing-unit) * 2); /* 16px */
+}
+
+a {
+    color: var(--bp-primary-color);
+    text-decoration: none;
+    transition: var(--bp-transition-base);
+}
+a:hover {
+    color: var(--bp-primary-hover-color);
+    text-decoration: underline;
+}
+
+/* --- Blueprint Components --- */
+
+/* Cards */
+.bp-card {
+    background-color: var(--bp-card-background-color);
+    border: 1px solid var(--bp-border-color);
+    border-radius: var(--bp-border-radius-lg); /* Slightly larger radius for cards */
+    padding: calc(var(--bp-spacing-unit) * 3); /* 24px */
+    margin-bottom: calc(var(--bp-spacing-unit) * 3);
+    box-shadow: 0 1px 3px rgba(23, 43, 77, 0.05), 0 1px 2px rgba(23, 43, 77, 0.05); /* Subtle shadow */
+}
+
+/* Buttons */
+.btn {
+    font-weight: var(--bp-font-weight-semibold);
+    border-radius: var(--bp-border-radius);
+    padding: calc(var(--bp-spacing-unit) * 0.75) calc(var(--bp-spacing-unit) * 1.5); /* 6px 12px */
+    font-size: var(--bp-font-size-base);
+    transition: var(--bp-transition-base);
+    border-width: 1px;
+    border-style: solid;
+}
+.btn:focus, .btn.focus {
+    box-shadow: 0 0 0 0.2rem var(--bp-focus-ring-color);
+}
+
+/* Primary Button */
+.btn-primary {
+    background-color: var(--bp-primary-color);
+    border-color: var(--bp-primary-color);
+    color: var(--bp-text-on-primary-accent);
+}
+.btn-primary:hover {
+    background-color: var(--bp-primary-hover-color);
+    border-color: var(--bp-primary-hover-color);
+    color: var(--bp-text-on-primary-accent);
+}
+.btn-primary:active, .btn-primary.active {
+    background-color: var(--bp-primary-active-color !important; /* Important to override Bootstrap */
+    border-color: var(--bp-primary-active-color !important;
+    color: var(--bp-text-on-primary-accent !important;
+}
+.btn-primary:focus, .btn-primary.focus {
+    background-color: var(--bp-primary-hover-color);
+    border-color: var(--bp-primary-hover-color);
+    color: var(--bp-text-on-primary-accent);
+    box-shadow: 0 0 0 0.2rem var(--bp-focus-ring-color);
+}
+
+
+/* Secondary Button */
+.btn-secondary {
+    background-color: var(--bp-card-background-color); /* Usually white or light */
+    border-color: var(--bp-secondary-color);
+    color: var(--bp-secondary-text-color);
+}
+.btn-secondary:hover {
+    background-color: var(--bp-secondary-color);
+    border-color: var(--bp-secondary-color);
+    color: var(--bp-text-primary-color);
+}
+.btn-secondary:active, .btn-secondary.active {
+    background-color: var(--bp-secondary-hover-color) !important;
+    border-color: var(--bp-secondary-hover-color) !important;
+    color: var(--bp-text-primary-color) !important;
+}
+.btn-secondary:focus, .btn-secondary.focus {
+    border-color: var(--bp-secondary-hover-color);
+    box-shadow: 0 0 0 0.2rem rgba(193, 199, 208, 0.5); /* Lighter focus ring for secondary */
+}
+
+/* Link Button (for less prominent actions) */
+.btn-link {
+    color: var(--bp-primary-color);
+    font-weight: var(--bp-font-weight-normal);
+}
+.btn-link:hover {
+    color: var(--bp-primary-hover-color);
+}
+
+/* Form Elements */
+.form-label {
+    font-weight: var(--bp-font-weight-semibold);
+    margin-bottom: calc(var(--bp-spacing-unit) * 0.5); /* 4px */
+    color: var(--bp-text-primary-color);
+}
+
+.form-control, .form-select {
+    border-radius: var(--bp-border-radius);
+    border: 1px solid var(--bp-border-color);
+    padding: calc(var(--bp-spacing-unit) * 0.75) calc(var(--bp-spacing-unit) * 1.25); /* 6px 10px */
+    font-size: var(--bp-font-size-base);
+    color: var(--bp-text-primary-color);
+    background-color: var(--bp-card-background-color);
+    transition: border-color var(--bp-transition-base), box-shadow var(--bp-transition-base);
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--bp-input-border-focus-color);
+    box-shadow: 0 0 0 0.2rem var(--bp-focus-ring-color);
+    outline: 0;
+}
+.form-control::placeholder {
+    color: var(--bp-text-secondary-color);
+    opacity: 0.7;
+}
+
+/* Checkbox and Radio */
+.form-check-input {
+    border-radius: var(--bp-border-radius);
+    border-color: var(--bp-border-color);
+}
+.form-check-input:checked {
+    background-color: var(--bp-primary-color);
+    border-color: var(--bp-primary-color);
+}
+.form-check-input:focus {
+    border-color: var(--bp-input-border-focus-color);
+    box-shadow: 0 0 0 0.2rem var(--bp-focus-ring-color);
+}
+.form-check-label {
+    color: var(--bp-text-primary-color);
+    font-size: var(--bp-font-size-base);
+}
+
+/* Info/Note sections */
+.bp-info-note {
+    background-color: var(--bp-card-background-color);
+    border: 1px solid var(--bp-border-color);
+    border-left: 4px solid var(--bp-primary-color); /* Accent border */
+    padding: calc(var(--bp-spacing-unit) * 1.5) calc(var(--bp-spacing-unit) * 2); /* 12px 16px */
+    border-radius: var(--bp-border-radius);
+    margin-top: calc(var(--bp-spacing-unit) * 2);
+    font-size: var(--bp-font-size-sm);
+}
+.bp-info-note p:last-child {
+    margin-bottom: 0;
+}
+.bp-note-text-warning {
+    color: var(--bp-accent-red);
+    font-weight: var(--bp-font-weight-semibold);
+}
+
+/* Code blocks */
+code {
+    font-size: var(--bp-font-size-sm);
+    color: var(--bp-accent-orange); /* Differentiate inline code */
+    background-color: rgba(255, 86, 48, 0.05); /* Very subtle background */
+    padding: 0.2em 0.4em;
+    margin: 0;
+    border-radius: var(--bp-border-radius);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+pre {
+    background-color: #061A2E; /* Dark background for code blocks */
+    color: #DCE5F0; /* Light text on dark background */
+    padding: calc(var(--bp-spacing-unit) * 2); /* 16px */
+    border-radius: var(--bp-border-radius);
+    overflow-x: auto;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: var(--bp-font-size-sm);
+    margin-bottom: calc(var(--bp-spacing-unit) * 2);
+}
+pre code {
+    color: inherit; /* Inherit from pre */
+    background-color: transparent;
+    padding: 0;
+    font-size: inherit;
+}
+
+
+/* Loader */
+.bp-loader-container { /* To center the loader if needed */
+    text-align: center;
+    padding: calc(var(--bp-spacing-unit) * 2) 0;
+}
+.bp-loader {
+    display: inline-block; /* Changed from block for better integration */
+    width: 2rem; /* 32px */
+    height: 2rem;
+    vertical-align: -0.125em;
+    border: 0.25em solid var(--bp-primary-color); /* Thicker border */
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: bp-loader-spin .75s linear infinite;
+}
+@keyframes bp-loader-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Result Area */
+#result_container {
+    margin-top: calc(var(--bp-spacing-unit) * 3);
+}
+#result {
+    background-color: var(--bp-card-background-color);
+    border: 1px solid var(--bp-border-color);
+    border-radius: var(--bp-border-radius);
+    padding: calc(var(--bp-spacing-unit) * 2);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: var(--bp-font-size-sm);
+    color: var(--bp-text-primary-color);
+}
+
+/* Docs page specific */
+.docs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    gap: calc(var(--bp-spacing-unit) * 2); /* 16px */
+    margin-bottom: calc(var(--bp-spacing-unit) * 3);
+}
+.docs-header h1 {
+    margin-bottom: 0;
+}
+
+.field-name {
+    font-weight: var(--bp-font-weight-semibold);
+    color: var(--bp-primary-color);
+}
+.default-value {
+    font-style: italic;
+    color: var(--bp-text-secondary-color);
+}
+
+.language-list {
+    columns: 3;
+    padding-left: 0;
+    list-style-type: none;
+    font-size: var(--bp-font-size-sm);
+}
+.language-list li {
+    padding-bottom: calc(var(--bp-spacing-unit) * 0.5); /* 4px */
+    page-break-inside: avoid;
+    break-inside: avoid-column;
+}
+@media (max-width: 992px) {
+    .language-list { columns: 2; }
+}
+@media (max-width: 576px) {
+    .language-list { columns: 1; }
+}
+
+/* Utility classes */
+.mb-spacing-1 { margin-bottom: var(--bp-spacing-unit); } /* 8px */
+.mb-spacing-2 { margin-bottom: calc(var(--bp-spacing-unit) * 2); } /* 16px */
+.mb-spacing-3 { margin-bottom: calc(var(--bp-spacing-unit) * 3); } /* 24px */
+.mt-spacing-3 { margin-top: calc(var(--bp-spacing-unit) * 3); } /* 24px */
