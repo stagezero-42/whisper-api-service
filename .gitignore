@@ -8,7 +8,7 @@ uploads/*
 !uploads/.gitkeep
 
 # PyCharm folders
-.idea
+.idea/
 
 # Local instance files (if any)
 instance/
