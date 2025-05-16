@@ -89,14 +89,23 @@ To deploy the Whisper API service to an Ubuntu 22.04 server for production, foll
     pip install -r requirements.txt
     ```
 
-5.  **Install a Production WSGI Server (e.g., Gunicorn):**
+5.  **Pre-download Whisper Models (Optional but Recommended):**
+   The Whisper API service relies on OpenAI's Whisper models for transcription. These models are downloaded automatically by the whisper library on their first use and cached locally (typically in ~/.cache/whisper). To avoid runtime downloads, especially in production environments or for faster initial startup of Celery workers, you can pre-download the desired models. This project includes a utility script, pull_models.py, which allows you to interactively select and download standard Whisper models (including tiny, base, small, medium, large, and turbo, along with their English-only counterparts). To use it, activate your virtual environment and run `python download_prompt_models.py`, then follow the on-screen prompts for each model. This ensures the models are present in the local cache before the application or workers attempt to load them.
+
+    ```bash
+    python pull_models.py
+    ```
+
+
+
+6.  **Install a Production WSGI Server (e.g., Gunicorn):**
     Flask's built-in server is not suitable for production.
 
     ```bash
     pip install gunicorn
     ```
 
-6.  **Configure Gunicorn:**
+7.  **Configure Gunicorn:**
 
       * Test Gunicorn by running it from your project directory:
         ```bash
@@ -104,7 +113,7 @@ To deploy the Whisper API service to an Ubuntu 22.04 server for production, foll
         ```
         Replace `app:app` with `your_main_file_name:your_flask_app_instance_name` if different.
 
-7.  **Set up a Systemd Service (for managing the application):**
+8.  **Set up a Systemd Service (for managing the application):**
 
       * Create a service file:
         ```bash
