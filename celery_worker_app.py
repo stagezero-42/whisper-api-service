@@ -1,4 +1,22 @@
 # celery_worker_app.py
+import multiprocessing
+import torch # Import torch to check for CUDA availability
+
+# Set the start method for multiprocessing if CUDA is available
+# This MUST be done before any other CUDA-related imports or operations
+# in the main module or by Celery's worker initialization.
+if torch.cuda.is_available():
+    try:
+        # 'spawn' is generally recommended for CUDA.
+        # 'forkserver' can also work but 'spawn' is often safer.
+        multiprocessing.set_start_method('spawn', force=True)
+        print("Celery Worker: Set multiprocessing start method to 'spawn' for CUDA.")
+    except RuntimeError as e:
+        # This might happen if the context has already been set (e.g., by another library)
+        # or if called too late.
+        print(f"Celery Worker: Could not set multiprocessing start method to 'spawn': {e}")
+        print("Celery Worker: CUDA might not work correctly in child processes.")
+
 from celery import Celery
 import os
 from whisper_wrapper import transcribe_audio as actual_transcribe_function
