@@ -3,46 +3,55 @@ import os
 import torch
 import io  # For creating in-memory text streams
 
-# Determine device
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Whisper wrapper: Using device: {DEVICE}")
+# Determine default device at module level if not passed explicitly
+DEFAULT_DEVICE_WHISPER = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Whisper wrapper: Default device set to: {DEFAULT_DEVICE_WHISPER}")
 
 # Cache for different models
 model_cache = {}
 
 
-def load_whisper_model(model_name="base"):
+def load_whisper_model(model_name="base", device=None):
     global model_cache
-    if model_name in model_cache:
-        print(f"Using cached Whisper model: {model_name} on {DEVICE}.")
-        return model_cache[model_name]
 
-    print(f"Loading Whisper model: {model_name}...")
+    # Determine effective device for this load attempt
+    # If a device is passed, use it; otherwise, use the module's default.
+    effective_device = device if device is not None else DEFAULT_DEVICE_WHISPER
+
+    cache_key = f"{model_name}_{effective_device}"  # Device-specific cache key
+
+    if cache_key in model_cache:
+        print(f"Using cached Whisper model: {model_name} on {effective_device} (from RAM cache).")
+        return model_cache[cache_key]
+
+    print(f"Attempting to load Whisper model: {model_name} for device: {effective_device}...")
     current_model = None
     try:
-        # Check if GPU is available for "turbo" or other large models if that's a convention
-        # For now, just load as requested.
-        effective_device = DEVICE
-        if model_name == "turbo" and DEVICE != "cuda":
-            print("Warning: 'turbo' model selected but no CUDA GPU found. Attempting to load on CPU.")
-            # effective_device = "cpu" # or let it fail if turbo is strictly GPU
-
         current_model = whisper.load_model(model_name, device=effective_device)
-        model_cache[model_name] = current_model
-        print(f"Model {model_name} loaded successfully on {effective_device}.")
+        model_cache[cache_key] = current_model
+        print(f"Model '{model_name}' loaded successfully on {effective_device} and cached in RAM.")
     except Exception as e:
-        print(f"Error loading model {model_name} on {DEVICE}: {e}")
-        # Try CPU if primary device fails (especially if it was CUDA)
-        if DEVICE == "cuda" and model_name != "turbo":  # Avoid retrying turbo on CPU if already warned
+        print(f"Error loading model '{model_name}' on primary device '{effective_device}': {e}")
+        # Fallback logic if primary device fails (e.g., if CUDA was attempted and failed)
+        if effective_device == "cuda":
+            print(f"Attempting to load model '{model_name}' on CPU as fallback...")
             try:
-                print(f"Attempting to load model {model_name} on CPU...")
+                cpu_cache_key = f"{model_name}_cpu"
+                if cpu_cache_key in model_cache:  # Check if already CPU cached
+                    print(f"Using cached Whisper model: {model_name} on cpu (from RAM cache after CUDA fail).")
+                    return model_cache[cpu_cache_key]
+
                 current_model = whisper.load_model(model_name, device="cpu")
-                model_cache[model_name] = current_model
-                print(f"Model {model_name} loaded successfully on CPU.")
+                model_cache[cpu_cache_key] = current_model  # Cache it under CPU key
+                print(f"Model '{model_name}' loaded successfully on CPU (fallback) and cached in RAM.")
             except Exception as e_cpu:
-                print(f"Error loading model {model_name} on CPU: {e_cpu}")
-        if current_model is None:
-            print(f"Failed to load model {model_name} on any device.")
+                print(f"Error loading model '{model_name}' on CPU (fallback): {e_cpu}")
+                # If all attempts fail, current_model remains None
+        # If initial attempt was CPU and failed, current_model is already None
+
+    if current_model is None:
+        print(f"Failed to load model '{model_name}' on any attempted device.")
+
     return current_model
 
 
@@ -113,9 +122,18 @@ def to_tsv(result_segments):  # TSV is always a string
 def transcribe_audio(audio_path, model_name="base", task="transcribe", language=None,
                      initial_prompt=None, temperature=0.0, best_of=5,
                      word_timestamps=False, verbose=None):
-    loaded_model = load_whisper_model(model_name)
+    # Model will be loaded for CUDA if available, else CPU, by load_whisper_model's default behavior
+    loaded_model = load_whisper_model(model_name=model_name)
+
     if not loaded_model:
-        return {"error": f"Whisper model '{model_name}' could not be loaded."}
+        # load_whisper_model now prints detailed errors.
+        return {"error": f"Whisper model '{model_name}' could not be loaded (check logs for details)."}
+
+    # Determine the actual device the model was loaded on for fp16 setting
+    # This requires the model object to store its device, or infer it.
+    # Whisper model objects have a `device` attribute.
+    actual_model_device_type = loaded_model.device.type
+    print(f"Model '{model_name}' will be used on device: {actual_model_device_type}")
 
     if not os.path.exists(audio_path):
         return {"error": "Audio file not found."}
@@ -123,35 +141,19 @@ def transcribe_audio(audio_path, model_name="base", task="transcribe", language=
     transcribe_options = {
         "task": task,
         "verbose": verbose,
-        "fp16": True if DEVICE == "cuda" else False
+        # Set fp16 based on the device the model *actually* loaded on
+        "fp16": True if actual_model_device_type == "cuda" else False
     }
-    if language:
-        transcribe_options["language"] = language
-    if initial_prompt:
-        transcribe_options["initial_prompt"] = initial_prompt
-
-    # Ensure word_timestamps is explicitly True or False
+    # ... (rest of your transcribe_audio options setup) ...
+    if language: transcribe_options["language"] = language
+    if initial_prompt: transcribe_options["initial_prompt"] = initial_prompt
     transcribe_options["word_timestamps"] = bool(word_timestamps)
+    if temperature is not None: transcribe_options["temperature"] = temperature
+    if best_of is not None: transcribe_options["best_of"] = best_of
+    # ... (type conversion for temp and best_of) ...
 
-    if temperature is not None:
-        transcribe_options["temperature"] = temperature
-    if best_of is not None:
-        transcribe_options["best_of"] = best_of
-
-    for opt in ["temperature"]:
-        if opt in transcribe_options and transcribe_options[opt] is not None:
-            try:
-                transcribe_options[opt] = float(transcribe_options[opt])
-            except ValueError:
-                return {"error": f"Invalid value for {opt}: must be a float."}
-    for opt in ["best_of"]:
-        if opt in transcribe_options and transcribe_options[opt] is not None:
-            try:
-                transcribe_options[opt] = int(transcribe_options[opt])
-            except ValueError:
-                return {"error": f"Invalid value for {opt}: must be an integer."}
     try:
-        print(f"Transcribing {audio_path} with options: {transcribe_options}")
+        print(f"Transcribing {audio_path} with options: {transcribe_options} using model on {actual_model_device_type}")
         result = loaded_model.transcribe(audio_path, **transcribe_options)
         print("Transcription successful.")
         return result

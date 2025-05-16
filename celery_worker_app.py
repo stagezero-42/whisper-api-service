@@ -3,37 +3,38 @@ import multiprocessing
 import sys # Import sys to check command line arguments
 
 # --- Attempt to set multiprocessing start method for CUDA ---
-# This needs to execute when the main Celery process is starting,
-# BEFORE worker processes are spawned/forked.
-# We check if 'celery' is in the command used to run this script,
-# which is a common indicator that this is the parent Celery process.
-if 'celery' in sys.argv[0].lower() and any(arg in ['worker', 'beat'] for arg in sys.argv):
-    try:
-        import torch # Import torch only when needed for this block
-        if torch.cuda.is_available():
-            current_context = multiprocessing.get_start_method(allow_none=True)
-            print(f"Celery Worker (Parent Context): Current multiprocessing start method before setting: {current_context}")
-            if current_context is None or current_context == 'fork':
-                multiprocessing.set_start_method('spawn', force=True) # force=True is important
-                print(f"Celery Worker (Parent Context): Successfully set multiprocessing start method to 'spawn' for CUDA.")
-            elif current_context == 'spawn':
-                print(f"Celery Worker (Parent Context): Multiprocessing start method is already 'spawn'.")
-            else:
-                # If it's 'forkserver' or something else and you specifically need 'spawn'
-                print(f"Celery Worker (Parent Context): Multiprocessing start method is '{current_context}'. Attempting to force 'spawn'.")
-                multiprocessing.set_start_method('spawn', force=True)
-                print(f"Celery Worker (Parent Context): Re-attempted to set start method to 'spawn'. New context: {multiprocessing.get_start_method(allow_none=True)}")
+# This needs to execute when the main Celery process is starting.
+# We will make this block run unconditionally when the script is executed,
+# and then check if 'celery worker' is being run to print specific logs.
+_is_celery_worker_invocation = 'celery' in sys.argv[0].lower() and 'worker' in sys.argv
 
-        else:
-            print("Celery Worker (Parent Context): CUDA not available, not changing multiprocessing start method.")
-    except ImportError:
-        print("Celery Worker (Parent Context): PyTorch not found, cannot check CUDA availability for setting start method.")
-    except RuntimeError as e:
-        # This might happen if the context has already been set (e.g., by another library)
-        # or if called too late.
-        print(f"Celery Worker (Parent Context): ERROR setting multiprocessing start method to 'spawn': {e}")
-        print(f"Celery Worker (Parent Context): Current method is: {multiprocessing.get_start_method(allow_none=True)}")
-        print("Celery Worker (Parent Context): CUDA might not work correctly in child processes if method is not 'spawn'.")
+try:
+    import torch
+
+    if torch.cuda.is_available():
+        current_context = multiprocessing.get_start_method(allow_none=True)
+        if _is_celery_worker_invocation:
+            print(f"Celery Worker (Attempting Setup): Current multiprocessing start method: {current_context}")
+
+        # Try to set to 'spawn' if it's not already set, or if it's 'fork'
+        if current_context is None or current_context == 'fork':
+            multiprocessing.set_start_method('spawn', force=True)
+            if _is_celery_worker_invocation:
+                print(
+                    f"Celery Worker (Attempting Setup): Set multiprocessing start method to 'spawn'. New context: {multiprocessing.get_start_method(allow_none=True)}")
+        elif _is_celery_worker_invocation:  # If already spawn or forkserver
+            print(
+                f"Celery Worker (Attempting Setup): Multiprocessing start method already '{current_context}'. Not changing.")
+    else:
+        if _is_celery_worker_invocation:
+            print("Celery Worker (Attempting Setup): CUDA not available, not changing multiprocessing start method.")
+except ImportError:
+    if _is_celery_worker_invocation:
+        print("Celery Worker (Attempting Setup): PyTorch not found, cannot set start method for CUDA.")
+except RuntimeError as e:
+    if _is_celery_worker_invocation:
+        print(f"Celery Worker (Attempting Setup): ERROR setting multiprocessing start method: {e}")
+        print(f"Celery Worker (Attempting Setup): Current method: {multiprocessing.get_start_method(allow_none=True)}")
 # --- End of multiprocessing start method setting ---
 
 from celery import Celery
@@ -114,10 +115,13 @@ def transcribe_audio_task(self, audio_path, model_name, task_type, language, ini
 
 @worker_process_init.connect
 def preload_models(**kwargs):
-    # This function will be called when a Celery worker process starts
-    print("Celery Worker: Pre-loading default 'base' Whisper model...")
+    print("Celery Worker Process: Pre-loading default 'base' Whisper model...")
     try:
-        load_whisper_model(model_name="base") # Ensure this function exists and works
-        print("Celery Worker: Model 'base' pre-loading complete.")
+        # Let load_whisper_model decide the device (tries CUDA first if available)
+        loaded_model = load_whisper_model(model_name="base")
+        if loaded_model:
+            print(f"Celery Worker Process: Model 'base' pre-loaded successfully on {loaded_model.device.type}.")
+        else:
+            print("Celery Worker Process: Failed to preload 'base' model.")
     except Exception as e:
-        print(f"Celery Worker: Error pre-loading model: {e}")
+        print(f"Celery Worker Process: Error pre-loading 'base' model: {e}")
