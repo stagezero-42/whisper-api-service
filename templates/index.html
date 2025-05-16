@@ -94,7 +94,7 @@
                                 <input type="number" name="temperature" id="temperature" class="form-control" value="0.0" step="0.1" min="0" max="1.0">
                             </div>
                             <div class="col-md-6">
-                                <label for="best_of" class="form-label">Best Of</label>
+                                <label for="best_of" class="form_label">Best Of</label>
                                 <input type="number" name="best_of" id="best_of" class="form-control" value="5" step="1" min="1">
                             </div>
                         </div>
@@ -141,7 +141,12 @@
         const turboOption = document.getElementById('turbo_option');
         const enableTurboCheckbox = document.getElementById('enable_turbo_checkbox');
         const modelSelect = document.getElementById('model_name');
-        const loaderContainer = document.getElementById('loaderContainer'); // Updated loader ID
+        const loaderContainer = document.getElementById('loaderContainer');
+        const transcribeForm = document.getElementById('transcribeForm');
+        const resultDiv = document.getElementById('result');
+
+        // Variable to store the polling interval ID
+        let pollingIntervalId = null;
 
         if (enableTurboCheckbox) {
             enableTurboCheckbox.addEventListener('change', function() {
@@ -152,38 +157,168 @@
             });
         }
 
-        document.getElementById('transcribeForm').addEventListener('submit', async function(event) {
+        // Function to stop any ongoing polling
+        function stopPolling() {
+            if (pollingIntervalId) {
+                clearInterval(pollingIntervalId);
+                pollingIntervalId = null;
+            }
+        }
+
+        transcribeForm.addEventListener('submit', async function(event) {
             event.preventDefault();
+            stopPolling(); // Stop any previous polling before starting a new one
 
             const formData = new FormData(this);
             if (!formData.has('word_timestamps')) formData.set('word_timestamps', 'false');
             if (!formData.has('simplified_output')) formData.set('simplified_output', 'false');
 
-            const resultDiv = document.getElementById('result');
+            // Get output_format and simplified_output for constructing the status URL query params
+            const outputFormat = formData.get('output_format');
+            const simplifiedOutput = formData.get('simplified_output');
 
-            resultDiv.textContent = 'Transcribing... Please wait. This can take a while for large files or models.';
+
+            resultDiv.textContent = 'Submitting task... Please wait.';
             if(loaderContainer) loaderContainer.style.display = 'block';
 
 
             try {
-                const response = await fetch("{{ url_for('transcribe_route') }}", { // Ensure correct endpoint
+                const response = await fetch("{{ url_for('transcribe_route') }}", {
                     method: 'POST',
                     body: formData
                 });
 
-                if(loaderContainer) loaderContainer.style.display = 'none';
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && response.status === 202) { // Task submitted successfully (202 Accepted)
+                    resultDiv.textContent = `Task submitted. Waiting for result... Task ID: ${data.task_id}`;
+                    // Construct status URL with original output preferences for the /status endpoint
+                    let statusUrlWithParams = data.status_url;
+                    if (outputFormat || simplifiedOutput) {
+                        const params = new URLSearchParams();
+                        if (outputFormat) params.append('output_format', outputFormat);
+                        if (simplifiedOutput) params.append('simplified_output', simplifiedOutput);
+                        statusUrlWithParams += `?${params.toString()}`;
+                    }
+                    pollForResult(statusUrlWithParams, data.task_id);
+                } else if (response.ok) { // Should not happen if /transcribe only returns 202 or errors
+                    if(loaderContainer) loaderContainer.style.display = 'none';
                     resultDiv.textContent = JSON.stringify(data, null, 2);
-                } else {
-                    resultDiv.textContent = 'Error: ' + (data.error || response.statusText || "Unknown error");
                 }
-            } catch (error) {
+                 else { // Error submitting task (e.g., 400, 500 from Flask before Celery)
+                    if(loaderContainer) loaderContainer.style.display = 'none';
+                    resultDiv.textContent = 'Error submitting task: ' + (data.error || response.statusText || "Unknown error");
+                }
+            } catch (error) { // Network error or Flask app totally down
                 if(loaderContainer) loaderContainer.style.display = 'none';
                 resultDiv.textContent = 'Network error or server issue: ' + error.message;
             }
         });
+
+        async function pollForResult(statusUrl, taskId) {
+            try {
+                const pollInterval = 10000; // Poll every 10 seconds
+                let attempts = 0;
+                const maxAttempts = 36; // Stop polling after 6 minutes (36 * 10s)
+
+                pollingIntervalId = setInterval(async () => {
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollingIntervalId);
+                        pollingIntervalId = null;
+                        resultDiv.textContent = `Polling timed out after ${maxAttempts * pollInterval / 1000} seconds. Please check the status later. Task ID: ${taskId}`;
+                        if(loaderContainer) loaderContainer.style.display = 'none';
+                        return;
+                    }
+
+                    attempts++;
+                    const statusResponse = await fetch(statusUrl); // statusUrl already has query params if needed
+
+                    if (!statusResponse.ok) {
+                        // Don't clear interval here, let it keep trying unless it's a fatal error
+                        resultDiv.textContent = `Error fetching status (Attempt ${attempts}): ${statusResponse.status} ${statusResponse.statusText}. Retrying...`;
+                        // Could add logic here to stop on 404 for the task ID, for example.
+                        return;
+                    }
+
+                    const statusData = await statusResponse.json();
+                    resultDiv.textContent = `Task Status: ${statusData.status}. Checking again... (Attempt ${attempts})`;
+
+                    if (statusData.status === 'SUCCESS') {
+                        stopPolling();
+                        if(loaderContainer) loaderContainer.style.display = 'none';
+
+                        if (statusData.result) {
+                            // Check if the result itself is just a string (e.g., simplified text or TSV string)
+                            if (typeof statusData.result === 'string') {
+                                resultDiv.textContent = statusData.result;
+                            }
+                            // Check for formatted_output (could be string or object for simplified SRT/VTT)
+                            else if (statusData.result.formatted_output !== undefined) {
+                                if (typeof statusData.result.formatted_output === 'object') {
+                                    resultDiv.textContent = JSON.stringify(statusData.result.formatted_output, null, 2);
+                                } else {
+                                    resultDiv.textContent = statusData.result.formatted_output;
+                                }
+                            }
+                            // Check for transcription_details (full JSON output)
+                            else if (statusData.result.transcription_details) {
+                                resultDiv.textContent = JSON.stringify(statusData.result.transcription_details, null, 2);
+                            }
+                            // Fallback if result is an object but not matching known structures
+                            else if (typeof statusData.result === 'object') {
+                                resultDiv.textContent = JSON.stringify(statusData.result, null, 2);
+                            }
+                            else {
+                                 resultDiv.textContent = 'Task Succeeded, but result format is unrecognized.';
+                            }
+                        } else {
+                             resultDiv.textContent = 'Task Succeeded, but no result data was returned.';
+                        }
+
+                    } else if (statusData.status === 'FAILURE') {
+                        stopPolling();
+                        if(loaderContainer) loaderContainer.style.display = 'none';
+                        resultDiv.textContent = `Task Failed. Error: ${statusData.error_info || 'Unknown error from task'}`;
+                    }
+                    // If PENDING or STARTED, the loop continues
+                }, pollInterval);
+            } catch (error) { // Error in the polling logic itself (e.g. network down during poll)
+                stopPolling();
+                if(loaderContainer) loaderContainer.style.display = 'none';
+                resultDiv.textContent = 'Error during status polling: ' + error.message;
+            }
+        }
+
+        // Optional: Check if a task_id is in the URL on page load (e.g., if user bookmarked or was redirected)
+        // This is a basic example; you might want more robust handling.
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const taskIdFromUrl = urlParams.get('task_id');
+            const outputFormatFromUrl = urlParams.get('output_format'); // Or retrieve from form
+            const simplifiedOutputFromUrl = urlParams.get('simplified_output'); // Or retrieve from form
+
+
+            if (taskIdFromUrl) {
+                resultDiv.textContent = `Checking status for previous Task ID: ${taskIdFromUrl}...`;
+                if(loaderContainer) loaderContainer.style.display = 'block';
+
+                let statusUrl = `{{ url_for('get_task_status', task_id='TASK_ID_PLACEHOLDER') }}`.replace('TASK_ID_PLACEHOLDER', taskIdFromUrl);
+
+                const queryParams = new URLSearchParams();
+                const formOutputFormat = document.getElementById('output_format').value;
+                const formSimplifiedOutput = document.getElementById('simplified_output_checkbox').checked ? 'true' : 'false';
+
+                if (outputFormatFromUrl || formOutputFormat) queryParams.append('output_format', outputFormatFromUrl || formOutputFormat);
+                if (simplifiedOutputFromUrl || formSimplifiedOutput) queryParams.append('simplified_output', simplifiedOutputFromUrl || formSimplifiedOutput);
+
+                if (queryParams.toString()) {
+                    statusUrl += `?${queryParams.toString()}`;
+                }
+
+                pollForResult(statusUrl, taskIdFromUrl);
+            }
+        });
+
     </script>
 </body>
 </html>
